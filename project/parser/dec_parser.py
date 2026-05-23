@@ -16,8 +16,10 @@ from project.parser.fixed_width import parse_line
 from project.parser.registry import LayoutRegistry
 from project.utils.helpers import (
     clean_string,
+    extract_asset_name,
     format_cpf_cnpj,
     get_asset_description,
+    get_country_description,
     get_exempt_income_description,
     get_exclusive_income_description,
     parse_decimal,
@@ -211,15 +213,27 @@ class DecParser:
             valor_anterior = parse_decimal(fields.get("VR_ANTER", "0"), decimals=2)
             valor_atual = parse_decimal(fields.get("VR_ATUAL", "0"), decimals=2)
             cnpj_fonte = format_cpf_cnpj(fields.get("NM_CPFCNPJ", ""))
+            indicador_exterior = fields.get("IN_EXTERIOR", "").strip()
+            codigo_pais = fields.get("CD_PAIS", "").strip().zfill(3)
+            nome_ativo = extract_asset_name(discriminacao)
+            localizacao = get_country_description(codigo_pais)
+            if indicador_exterior == "1" and localizacao:
+                localizacao = f"Exterior - {localizacao}"
 
             return AssetRecord(
                 cpf=cpf,
+                grupo_bem=grupo_str,
+                codigo_item=bem_str,
                 codigo_bem=codigo_bem,
                 descricao=descricao,
                 discriminacao=discriminacao,
                 valor_anterior=valor_anterior,
                 valor_2025=valor_atual,
                 cnpj_fonte=cnpj_fonte,
+                indicador_exterior=indicador_exterior,
+                codigo_pais=codigo_pais,
+                localizacao=localizacao,
+                nome_ativo=nome_ativo,
             )
         except Exception as exc:
             logger.warning("Erro ao construir AssetRecord: %s", exc)

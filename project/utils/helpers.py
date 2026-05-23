@@ -35,10 +35,13 @@ def parse_decimal(value: str, decimals: int = 2) -> Decimal:
 
 
 def clean_string(value: str) -> str:
+    """Trim whitespace and remove leading zeros from textual fields.
+    Numeric strings (e.g., CPF/CNPJ) remain unchanged.
     """
-    Trims whitespaces and returns cleaned string.
-    """
-    return value.strip()
+    stripped = value.strip()
+    if stripped and not stripped.isdigit():
+        return stripped.lstrip('0')
+    return stripped
 
 
 def format_cpf_cnpj(value: str) -> str:
@@ -133,6 +136,37 @@ def get_asset_description(group_code: str, asset_code: str) -> str:
         return f"{group_names[g_code]} (Código {asset_code})"
         
     return f"Outros Bens e Direitos (Grupo {group_code}, Código {asset_code})"
+
+
+def get_country_description(code: str) -> str:
+    """
+    Returns a compact country/location description for common IRPF country codes.
+    """
+    normalized = code.strip().zfill(3) if code.strip().isdigit() else code.strip()
+    descriptions = {
+        "105": "Brasil",
+        "840": "Estados Unidos",
+    }
+    return descriptions.get(normalized, f"Pais {normalized}" if normalized else "")
+
+
+def extract_asset_name(text: str) -> str:
+    """
+    Tries to extract a compact market identifier from the asset description.
+    """
+    cleaned = clean_string(text)
+    if not cleaned:
+        return ""
+
+    ticker_match = re.search(r"\b[A-Z]{4}\d{1,2}\b", cleaned)
+    if ticker_match:
+        return ticker_match.group(0)
+
+    crypto_match = re.search(r"\b(BTC|ETH|SOL|USDT|USDC)\b", cleaned, re.IGNORECASE)
+    if crypto_match:
+        return crypto_match.group(1).upper()
+
+    return ""
 
 
 def get_exempt_income_description(code: str) -> str:

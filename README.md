@@ -82,7 +82,7 @@ Após a execução, abra `saida.xlsx` em qualquer visualizador de planilhas. O w
 - `Rendimentos Isentos`, com o nome do bem associado em formato de link interno.
 - `Rendimentos Exclusivos`, também com navegação interna para o bem correspondente.
 
-O exportador cria hyperlinks internos para facilitar a navegação entre o resumo e os detalhes.
+Todas as abas possuem uma primeira coluna `Item`, que enumera as linhas de dados. O exportador cria hyperlinks internos para facilitar a navegação entre resumo, bens e rendimentos, e o texto de cada link inclui o item relacionado.
 
 ---
 
@@ -91,13 +91,32 @@ O exportador cria hyperlinks internos para facilitar a navegação entre o resum
 - Removido o ponto de entrada legado `project/cli/`; a execução oficial agora passa por `project/main.py`.
 - O parser ficou centralizado em `DecParser`, sem funções procedurais antigas para leitura de arquivo.
 - A exportação Excel foi refatorada para incluir a aba `Resumo` como primeira planilha.
+- A planilha `Bens e Direitos` passou a exportar grupo, código, código do bem, localização, país, indicador de exterior, CNPJ fonte e nome do ativo quando identificável.
 - As abas de rendimentos agora usam hyperlinks internos para voltar ao bem correspondente.
+- As colunas de vínculos em `Bens e Direitos` agora são hyperlinks para as abas de rendimentos, em vez de apenas contagens.
+- Todas as abas receberam a coluna `Item` para padronizar navegação e referência cruzada.
 
 ---
 
 ## Teste rápido
 
-Um arquivo de exemplo (`example.DEC`) já está presente na raiz do projeto.  Ele contém um cabeçalho, um registro de bem, um rendimento isento e um rendimento exclusivo.  Rode o comando acima e verifique o Excel gerado.
+O arquivo [dados_exemplo/entrada_exemplo.DEC](/home/rafael/projetos/irpf-compare/dados_exemplo/entrada_exemplo.DEC) foi enriquecido para servir como base de testes e comparações futuras. Ele agora inclui:
+
+- múltiplos bens com grupos e códigos distintos, como imóvel, ações, CDB, conta no exterior e criptoativo;
+- valores de ano anterior e ano atual preenchidos;
+- indicador de exterior e código de país para cenários de localização;
+- fontes pagadoras variadas para vincular rendimentos aos bens;
+- rendimentos isentos e exclusivos, tanto diretos quanto detalhados.
+
+Isso ajuda a validar comparações por tipo de ativo, local, fonte pagadora e evolução patrimonial.
+
+Campos especialmente úteis para comparações futuras:
+
+- grupo e código do bem separados do código composto;
+- localização e código do país;
+- identificação da fonte pagadora por CNPJ;
+- nome do ativo quando reconhecido na discriminação, como ticker de ação ou sigla de criptoativo;
+- vínculos navegáveis entre bem e rendimentos nas duas direções.
 
 ---
 

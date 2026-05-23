@@ -8,7 +8,7 @@ Hierarquia de relacionamento:
 """
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import List
+from typing import List, Optional
 
 
 @dataclass
@@ -22,6 +22,7 @@ class ExemptIncomeRecord:
     cnpj_fonte: str = ""       # CNPJ da fonte pagadora (chave para reconciliação)
     nome_fonte: str = ""       # Nome da fonte pagadora
     origem: str = "direto"     # "direto" (reg 23) | "detalhe" (reg 84/85/86/87)
+    bem_associado: Optional[str] = None
 
 
 @dataclass
@@ -35,6 +36,7 @@ class ExclusiveIncomeRecord:
     cnpj_fonte: str = ""       # CNPJ da fonte pagadora (chave para reconciliação)
     nome_fonte: str = ""       # Nome da fonte pagadora
     origem: str = "direto"     # "direto" (reg 24) | "detalhe" (reg 88/89)
+    bem_associado: Optional[str] = None
 
 
 @dataclass
@@ -42,11 +44,17 @@ class AssetRecord:
     """Bem ou Direito declarado (registro 27)."""
 
     cpf: str
+    grupo_bem: str            # ex: "03"
+    codigo_item: str          # ex: "01"
     codigo_bem: str            # ex: "03-01" (grupo-código formatado)
     descricao: str             # descrição enriquecida em PT-BR
     valor_anterior: Decimal    # valor na declaração anterior (VR_ANTER)
     valor_2025: Decimal        # valor na declaração atual    (VR_ATUAL)
     cnpj_fonte: str = ""       # CNPJ vinculado ao bem (chave para reconciliação)
+    indicador_exterior: str = ""
+    codigo_pais: str = ""
+    localizacao: str = ""
+    nome_ativo: str = ""
     discriminacao: str = ""    # texto livre discriminativo do bem (TX_BEM)
 
     # Relacionamentos preenchidos na etapa de reconciliação pós-parsing
