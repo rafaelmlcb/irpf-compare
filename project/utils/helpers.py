@@ -194,7 +194,8 @@ def extract_structured_asset_fields(text: str) -> Tuple[str, str, Optional[int],
         if parts[3].isdigit():
             quantidade = int(parts[3])
         try:
-            preco_medio = Decimal(parts[4].replace(".", "").replace(",", "."))
+            preco_bruto = re.sub(r"(?i)r\$\s*", "", parts[4]).strip()
+            preco_medio = Decimal(preco_bruto.replace(".", "").replace(",", "."))
         except (InvalidOperation, AttributeError):
             preco_medio = None
     else:

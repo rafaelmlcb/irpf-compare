@@ -55,6 +55,14 @@ class TestParserHelpers(unittest.TestCase):
         self.assertEqual(quantidade, 88)
         self.assertEqual(preco_medio, Decimal("28.08"))
 
+        instituicao2, nome_ativo2, quantidade2, preco_medio2 = extract_structured_asset_fields(
+            "BB-ACOES-DIVO11-110-R$ 64,25-BB - ACOES VIA BB BANCO DE INVESTIMENTO S/A"
+        )
+        self.assertEqual(instituicao2, "BB")
+        self.assertEqual(nome_ativo2, "DIVO11")
+        self.assertEqual(quantidade2, 110)
+        self.assertEqual(preco_medio2, Decimal("64.25"))
+
 
 class TestFixedWidthParser(unittest.TestCase):
     """
