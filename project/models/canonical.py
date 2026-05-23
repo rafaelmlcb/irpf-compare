@@ -54,7 +54,10 @@ class AssetRecord:
     indicador_exterior: str = ""
     codigo_pais: str = ""
     localizacao: str = ""
+    instituicao: str = ""
     nome_ativo: str = ""
+    quantidade: Optional[int] = None
+    preco_medio: Optional[Decimal] = None
     discriminacao: str = ""    # texto livre discriminativo do bem (TX_BEM)
 
     # Relacionamentos preenchidos na etapa de reconciliação pós-parsing

@@ -92,6 +92,7 @@ Todas as abas possuem uma primeira coluna `Item`, que enumera as linhas de dados
 - O parser ficou centralizado em `DecParser`, sem funções procedurais antigas para leitura de arquivo.
 - A exportação Excel foi refatorada para incluir a aba `Resumo` como primeira planilha.
 - A planilha `Bens e Direitos` passou a exportar grupo, código, código do bem, localização, país, indicador de exterior, CNPJ fonte e nome do ativo quando identificável.
+- A planilha `Bens e Direitos` também passou a extrair `Instituicao`, `Quantidade` e `Preco Medio` quando a discriminação segue um padrão estruturado.
 - As abas de rendimentos agora usam hyperlinks internos para voltar ao bem correspondente.
 - As colunas de vínculos em `Bens e Direitos` agora são hyperlinks para as abas de rendimentos, em vez de apenas contagens.
 - Todas as abas receberam a coluna `Item` para padronizar navegação e referência cruzada.
@@ -116,7 +117,28 @@ Campos especialmente úteis para comparações futuras:
 - localização e código do país;
 - identificação da fonte pagadora por CNPJ;
 - nome do ativo quando reconhecido na discriminação, como ticker de ação ou sigla de criptoativo;
+- instituição, quantidade e preço médio para ativos descritos em formato estruturado;
 - vínculos navegáveis entre bem e rendimentos nas duas direções.
+
+### Formato estruturado da discriminação
+
+Para bens do tipo ações, o parser pode aproveitar uma convenção textual para extrair campos adicionais automaticamente:
+
+```text
+INSTITUICAO-ACOES-TICKER-QUANTIDADE-PRECO MEDIO-DETALHES LIVRES
+```
+
+Exemplos:
+
+- `ITAU-ACOES-MDNE3-88-28,08-...`
+- `BB-ACOES-DIVO11-110-64,25-...`
+
+Nesses casos, a exportação tenta preencher:
+
+- `Instituicao`
+- `Nome do Ativo`
+- `Quantidade`
+- `Preco Medio`
 
 ---
 

@@ -7,6 +7,7 @@ from project.parser.dec_parser import DecParser
 from project.utils.helpers import (
     parse_decimal,
     clean_string,
+    extract_structured_asset_fields,
     format_cpf_cnpj,
     get_asset_description,
 )
@@ -44,6 +45,15 @@ class TestParserHelpers(unittest.TestCase):
         # Invalid format output
         self.assertEqual(format_cpf_cnpj("123"), "123")
         self.assertEqual(format_cpf_cnpj(""), "")
+
+    def test_extract_structured_asset_fields(self) -> None:
+        instituicao, nome_ativo, quantidade, preco_medio = extract_structured_asset_fields(
+            "ITAU-ACOES-MDNE3-88-28,08-Posicao consolidada"
+        )
+        self.assertEqual(instituicao, "ITAU")
+        self.assertEqual(nome_ativo, "MDNE3")
+        self.assertEqual(quantidade, 88)
+        self.assertEqual(preco_medio, Decimal("28.08"))
 
 
 class TestFixedWidthParser(unittest.TestCase):
@@ -179,6 +189,7 @@ class TestDecParser(unittest.TestCase):
             self.assertEqual(assets[0].cpf, "12345678901")
             self.assertEqual(assets[0].codigo_bem, "03-01")
             self.assertEqual(assets[0].valor_2025, Decimal("100.00"))
+            self.assertEqual(assets[0].localizacao, "Brasil")
             
             # Check Exempt Incomes (Direct 03 + Detailed 09)
             self.assertEqual(len(exempts), 2)

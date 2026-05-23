@@ -1,6 +1,6 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 import re
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 def parse_decimal(value: str, decimals: int = 2) -> Decimal:
     """
@@ -167,6 +167,40 @@ def extract_asset_name(text: str) -> str:
         return crypto_match.group(1).upper()
 
     return ""
+
+
+def extract_structured_asset_fields(text: str) -> Tuple[str, str, Optional[int], Optional[Decimal]]:
+    """
+    Extracts structured asset metadata from descriptions like:
+      INSTITUICAO-ACOES-TICKER-QUANTIDADE-PRECO MEDIO-...
+      BB-ACOES-DIVO11-110-64,25-...
+    Returns: instituicao, nome_ativo, quantidade, preco_medio
+    """
+    cleaned = clean_string(text)
+    if not cleaned:
+        return "", "", None, None
+
+    parts = [part.strip() for part in cleaned.split("-") if part.strip()]
+    if not parts:
+        return "", "", None, None
+
+    instituicao = parts[0].upper()
+    nome_ativo = ""
+    quantidade: Optional[int] = None
+    preco_medio: Optional[Decimal] = None
+
+    if len(parts) >= 5 and parts[1].upper() == "ACOES":
+        nome_ativo = parts[2].upper()
+        if parts[3].isdigit():
+            quantidade = int(parts[3])
+        try:
+            preco_medio = Decimal(parts[4].replace(".", "").replace(",", "."))
+        except (InvalidOperation, AttributeError):
+            preco_medio = None
+    else:
+        nome_ativo = extract_asset_name(cleaned)
+
+    return instituicao, nome_ativo, quantidade, preco_medio
 
 
 def get_exempt_income_description(code: str) -> str:

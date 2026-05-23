@@ -32,6 +32,10 @@ def _money(value: Decimal) -> float:
     return float(value or Decimal("0"))
 
 
+def _decimal_or_blank(value: Decimal | None) -> float | str:
+    return float(value) if value is not None else ""
+
+
 def _auto_width(ws) -> None:
     for column_cells in ws.columns:
         max_len = max(len(str(cell.value)) if cell.value is not None else 0 for cell in column_cells)
@@ -141,7 +145,10 @@ def _write_assets(ws, assets: Sequence[AssetRecord]) -> dict[int, int]:
         "Codigo",
         "Codigo do Bem",
         "Descricao",
+        "Instituicao",
         "Nome do Ativo",
+        "Quantidade",
+        "Preco Medio",
         "Localizacao",
         "Indicador Exterior",
         "Codigo do Pais",
@@ -165,7 +172,10 @@ def _write_assets(ws, assets: Sequence[AssetRecord]) -> dict[int, int]:
             asset.codigo_item,
             asset.codigo_bem,
             asset.descricao,
+            asset.instituicao,
             asset.nome_ativo,
+            asset.quantidade if asset.quantidade is not None else "",
+            _decimal_or_blank(asset.preco_medio),
             asset.localizacao,
             asset.indicador_exterior,
             asset.codigo_pais,
@@ -251,7 +261,7 @@ def _write_asset_income_links(
         exempt_count = len(asset.rendimentos_isentos)
         exclusive_count = len(asset.rendimentos_exclusivos)
 
-        exempt_cell = ws.cell(row=row_idx, column=15)
+        exempt_cell = ws.cell(row=row_idx, column=18)
         if exempt_count and id(asset) in exempt_rows:
             _set_hyperlink(
                 exempt_cell,
@@ -264,7 +274,7 @@ def _write_asset_income_links(
         else:
             exempt_cell.value = exempt_count
 
-        exclusive_cell = ws.cell(row=row_idx, column=16)
+        exclusive_cell = ws.cell(row=row_idx, column=19)
         if exclusive_count and id(asset) in exclusive_rows:
             _set_hyperlink(
                 exclusive_cell,
