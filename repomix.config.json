@@ -1,0 +1,30 @@
+{
+  "output": {
+    "format": "markdown",
+    "filePath": "repomix-output.md",
+    "showLineNumbers": false,
+    "removeComments": false,
+    "removeEmptyLines": true,
+    "topFilesLength": 20
+  },
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      "**/vendor/**/*.js",
+      "**/*.min.js",
+      "**/*.svg",
+      "**/*.png",
+      "**/*.jpg",
+      "**/*.jpeg",
+      "**/*.ico",
+      "**/*.lock",
+      "**/Chart.lock",
+      "jarbasia-infra/helm-charts/kong/charts/**",
+      "**/docs/00-inspiration/**",
+      "**/target/**",
+      "**/.docusaurus/**",
+      "**/node_modules/**"
+    ]
+  }
+}
