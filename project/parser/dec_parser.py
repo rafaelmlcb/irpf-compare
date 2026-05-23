@@ -321,6 +321,7 @@ class DecParser:
             if rec.cnpj_fonte and rec.cnpj_fonte in asset_index:
                 asset = asset_index[rec.cnpj_fonte]
                 asset.rendimentos_isentos.append(rec)
+                rec.bem_associado = asset.descricao
                 logger.debug(
                     "Isento cód.%s vinculado ao bem %s via CNPJ %s",
                     rec.tipo_rendimento, asset.codigo_bem, rec.cnpj_fonte,
@@ -330,6 +331,7 @@ class DecParser:
             if rec.cnpj_fonte and rec.cnpj_fonte in asset_index:
                 asset = asset_index[rec.cnpj_fonte]
                 asset.rendimentos_exclusivos.append(rec)
+                rec.bem_associado = asset.descricao
                 logger.debug(
                     "Exclusivo cód.%s vinculado ao bem %s via CNPJ %s",
                     rec.tipo_rendimento, asset.codigo_bem, rec.cnpj_fonte,

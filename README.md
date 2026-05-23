@@ -19,8 +19,6 @@ A arquitetura está preparada para extensões (novo registros, reconciliação, 
 ```
 irpf-compare/
 ├─ project/
-│  ├─ cli/                 # ponto de entrada da CLI
-│  │   └─ main.py
 │  ├─ exporters/           # exportador para Excel
 │  │   └─ excel_exporter.py
 │  ├─ models/              # dataclasses canônicas
@@ -68,20 +66,32 @@ pip install pandas openpyxl
 ## Como executar
 
 ```bash
-# Executar a CLI
-python project/cli/main.py \
-    --input example.DEC \
-    --output saida.xlsx \
-    --debug   # opcional, exibe logs detalhados
-```
-python3 -m project.cli.main --input example.DEC --output saida.xlsx --debug
+# Executar o ponto de entrada oficial
+python3 -m project.main --input dados_exemplo/entrada_exemplo.DEC --output dados_exemplo/saida_exemplo.xlsx --debug
 
+```
 
 - `--input` – caminho para o arquivo `.DEC` ou `.DBK` que será analisado.
 - `--output` – caminho onde o Excel será gravado.
 - `--debug` – ativa logging em nível `DEBUG` (útil para depuração).
 
-Após a execução, abra `saida.xlsx` em qualquer visualizador de planilhas.  O workbook contém três abas (`Assets`, `ExemptIncomes`, `ExclusiveIncomes`) com filtros automáticos, cabeçalhos congelados e colunas dimensionadas.
+Após a execução, abra `saida.xlsx` em qualquer visualizador de planilhas. O workbook contém quatro abas:
+
+- `Resumo`, como primeira aba, consolidando cada bem em uma única linha.
+- `Bens e Direitos`, com os detalhes completos de cada ativo.
+- `Rendimentos Isentos`, com o nome do bem associado em formato de link interno.
+- `Rendimentos Exclusivos`, também com navegação interna para o bem correspondente.
+
+O exportador cria hyperlinks internos para facilitar a navegação entre o resumo e os detalhes.
+
+---
+
+## Atualizações Recentes
+
+- Removido o ponto de entrada legado `project/cli/`; a execução oficial agora passa por `project/main.py`.
+- O parser ficou centralizado em `DecParser`, sem funções procedurais antigas para leitura de arquivo.
+- A exportação Excel foi refatorada para incluir a aba `Resumo` como primeira planilha.
+- As abas de rendimentos agora usam hyperlinks internos para voltar ao bem correspondente.
 
 ---
 
