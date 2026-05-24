@@ -338,11 +338,7 @@ class DecParser:
             cpf = clean_string(fields.get("NR_CPF", ""))
             code = _normalize_code(fields.get("NR_COD", ""))
             descricao = get_exclusive_income_description(code)
-            cnpj_fonte = ""
-            if "NR_CGC_PAGADORA" in fields:
-                cnpj_fonte = _normalize_cnpj(fields.get("NR_CGC_PAGADORA", ""))
-            else:
-                cnpj_fonte = _normalize_cnpj(raw_line[10:24])
+            cnpj_fonte = _normalize_cnpj(fields.get("NR_PAGADORA", "") or raw_line[29:43])
             nome_fonte = clean_string(fields.get("NM_NOME", ""))
             valor = parse_decimal(fields.get("VR_VALOR", "0"), decimals=2)
             return TaxableIncomeRecord(

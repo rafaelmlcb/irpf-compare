@@ -143,16 +143,18 @@ R24_SPEC = RecordSpec(
     description="Rendimentos Sujeitos a Tributação Exclusiva (Sumário/Direto)"
 )
 
-# Register 88 - Rendimento Exclusivo Detalhe 2
+# Register 88 - Rendimento Tributável Detalhe 2
 R88_SPEC = RecordSpec(
     record_type="88",
     fields=[
         FieldSpec("NR_REG", 1, 2, "N"),
         FieldSpec("NR_CPF", 3, 13, "C"),
-        FieldSpec("NR_CGC_PAGADORA", 11, 24, "C"),
+        FieldSpec("IN_TIPO", 14, 14, "C"),
+        FieldSpec("NR_CPF_BENEFIC", 15, 25, "C"),
         FieldSpec("NR_COD", 26, 29, "N"),
-        FieldSpec("NM_NOME", 30, 89, "C"),
-        FieldSpec("VR_VALOR", 90, 102, "N", decimals=2),
+        FieldSpec("NR_PAGADORA", 30, 43, "C"),
+        FieldSpec("NM_NOME", 44, 103, "C"),
+        FieldSpec("VR_VALOR", 104, 116, "N", decimals=2),
     ],
     description="Rendimento Tributável Tipo de Informação 2"
 )

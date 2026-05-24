@@ -154,10 +154,12 @@ class TestDecParser(unittest.TestCase):
                 
         write_88("88", 1)
         write_88("12345678901", 3)
+        write_88("T", 14)
+        write_88("12345678901", 15)
         write_88("0010", 26)
-        write_88("12345678000199", 11)
-        write_88("Fonte Pagadora Tributavel", 30)
-        write_88("0000000300000", 90) # VR_VALOR (3000.00 with decimals=2)
+        write_88("12345678000199", 30)
+        write_88("Fonte Pagadora Tributavel", 44)
+        write_88("0000000300000", 104) # VR_VALOR (3000.00 with decimals=2)
         write_88("00000", 117)
         write_88("0000000000", 122)
         line_88 = "".join(buf_88) + "\n"
