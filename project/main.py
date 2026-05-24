@@ -61,11 +61,11 @@ def main() -> int:
         
         # 2. Parse DIRPF file
         dec_parser = DecParser(registry)
-        assets, exempts, exclusives = dec_parser.parse_file(args.input)
+        assets, exempts, exclusives, taxables = dec_parser.parse_file(args.input)
         
         # 3. Export to Excel
         logger.info(f"Iniciando exportação dos dados para: {args.output}")
-        export_to_excel(assets, exempts, exclusives, args.output)
+        export_to_excel(assets, exempts, exclusives, taxables, args.output)
         logger.info("Exportação concluída com sucesso!")
         
         # 4. Debug statistics reporting

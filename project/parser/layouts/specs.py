@@ -149,14 +149,12 @@ R88_SPEC = RecordSpec(
     fields=[
         FieldSpec("NR_REG", 1, 2, "N"),
         FieldSpec("NR_CPF", 3, 13, "C"),
-        FieldSpec("IN_TIPO", 14, 14, "C"),
-        FieldSpec("NR_CPF_BENEFIC", 15, 25, "C"),
+        FieldSpec("NR_CGC_PAGADORA", 11, 24, "C"),
         FieldSpec("NR_COD", 26, 29, "N"),
-        FieldSpec("NR_PAGADORA", 30, 43, "C"),
-        FieldSpec("NM_NOME", 44, 103, "C"),
-        FieldSpec("VR_VALOR", 104, 116, "N", decimals=2),
+        FieldSpec("NM_NOME", 30, 89, "C"),
+        FieldSpec("VR_VALOR", 90, 102, "N", decimals=2),
     ],
-    description="Rendimento Exclusivo Tipo de Informação 2"
+    description="Rendimento Tributável Tipo de Informação 2"
 )
 
 # Register 89 - Rendimento Exclusivo Detalhe 3

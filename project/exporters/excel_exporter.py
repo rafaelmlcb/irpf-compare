@@ -18,7 +18,7 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.table import Table, TableStyleInfo
 
-from project.models.canonical import AssetRecord, ExemptIncomeRecord, ExclusiveIncomeRecord
+from project.models.canonical import AssetRecord, ExemptIncomeRecord, ExclusiveIncomeRecord, TaxableIncomeRecord
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +26,7 @@ SUMMARY_SHEET = "Resumo"
 ASSETS_SHEET = "Bens e Direitos"
 EXEMPTS_SHEET = "Rendimentos Isentos"
 EXCLUSIVES_SHEET = "Rendimentos Exclusivos"
+TAXABLES_SHEET = "Rendimentos Tributáveis"
 
 
 def _money(value: Decimal) -> float:
@@ -103,6 +104,7 @@ def _write_summary(ws, assets: Sequence[AssetRecord], asset_rows: dict[int, int]
         "Valor Ano Atual (R$)",
         "Total Rend. Isentos (R$)",
         "Total Rend. Exclusivos (R$)",
+        "Total Rend. Tributáveis (R$)",
         "Ver Detalhes",
     ]
     ws.append(headers)
@@ -124,10 +126,11 @@ def _write_summary(ws, assets: Sequence[AssetRecord], asset_rows: dict[int, int]
             _money(asset.valor_2025),
             _money(sum((r.valor for r in asset.rendimentos_isentos), Decimal("0"))),
             _money(sum((r.valor for r in asset.rendimentos_exclusivos), Decimal("0"))),
+            _money(sum((r.valor for r in asset.rendimentos_tributaveis), Decimal("0"))),
             None,
         ])
         _set_hyperlink(
-            ws.cell(row=idx, column=13),
+            ws.cell(row=idx, column=14),
             _hyperlink_formula(ASSETS_SHEET, f"A{asset_row}", _item_label(idx - 1, "Abrir")),
         )
 
@@ -154,6 +157,7 @@ def _write_assets(ws, assets: Sequence[AssetRecord]) -> dict[int, int]:
         "Valor Atual (R$)",
         "Rend. Isentos Vinculados",
         "Rend. Exclusivos Vinculados",
+        "Rend. Tributáveis Vinculados",
         "Instituicao",
         "Nome do Ativo",
         "Quantidade",
@@ -181,6 +185,7 @@ def _write_assets(ws, assets: Sequence[AssetRecord]) -> dict[int, int]:
             _money(asset.valor_2025),
             len(asset.rendimentos_isentos),
             len(asset.rendimentos_exclusivos),
+            len(asset.rendimentos_tributaveis),
             asset.instituicao,
             asset.nome_ativo,
             asset.quantidade if asset.quantidade is not None else "",
@@ -195,11 +200,12 @@ def _write_assets(ws, assets: Sequence[AssetRecord]) -> dict[int, int]:
 
 def _write_income_sheet(
     ws,
-    records: Sequence[ExemptIncomeRecord | ExclusiveIncomeRecord],
+    records: Sequence[ExemptIncomeRecord | ExclusiveIncomeRecord | TaxableIncomeRecord],
     assets_by_cnpj: dict[str, AssetRecord],
     asset_rows: dict[int, int],
     *,
     display_name: str,
+    bem_header: str = "Bem",
 ) -> dict[int, int]:
     headers = [
         "Item",
@@ -209,7 +215,7 @@ def _write_income_sheet(
         "Valor (R$)",
         "CNPJ Fonte Pagadora",
         "Nome Fonte Pagadora",
-        "Bem",
+        bem_header,
         "Origem",
     ]
     ws.append(headers)
@@ -292,6 +298,7 @@ def export_to_excel(
     assets: List[AssetRecord],
     exempts: List[ExemptIncomeRecord],
     exclusives: List[ExclusiveIncomeRecord],
+    taxables: List[TaxableIncomeRecord],
     output_path,
 ) -> None:
     wb = Workbook()
@@ -322,7 +329,33 @@ def export_to_excel(
         display_name="TabelaRendExclusivos",
     )
 
+    ws_taxables = wb.create_sheet(TAXABLES_SHEET)
+    taxable_rows = _write_income_sheet(
+        ws_taxables,
+        taxables,
+        assets_by_cnpj,
+        asset_rows,
+        display_name="TabelaRendTributaveis",
+        bem_header="Bem Associado (Descrição)",
+    )
+
     _write_asset_income_links(ws_assets, assets, asset_rows, exempt_rows, exclusive_rows)
+    for asset in assets:
+        row_idx = asset_rows[id(asset)]
+        taxable_count = len(asset.rendimentos_tributaveis)
+        taxable_cell = ws_assets.cell(row=row_idx, column=16)
+        if taxable_count and id(asset) in taxable_rows:
+            _set_hyperlink(
+                taxable_cell,
+                _hyperlink_formula(
+                    TAXABLES_SHEET,
+                    f"A{taxable_rows[id(asset)]}",
+                    _item_label(taxable_rows[id(asset)] - 1, str(taxable_count)),
+                ),
+            )
+        else:
+            taxable_cell.value = taxable_count
+
     _auto_width(ws_assets)
 
     if not wb.sheetnames:

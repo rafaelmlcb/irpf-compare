@@ -40,6 +40,20 @@ class ExclusiveIncomeRecord:
 
 
 @dataclass
+class TaxableIncomeRecord:
+    """Rendimento Tributável (registro 88)."""
+
+    cpf: str
+    tipo_rendimento: str
+    descricao: str
+    valor: Decimal
+    cnpj_fonte: str = ""
+    nome_fonte: str = ""
+    origem: str = "detalhe"
+    bem_associado: Optional[str] = None
+
+
+@dataclass
 class AssetRecord:
     """Bem ou Direito declarado (registro 27)."""
 
@@ -63,3 +77,4 @@ class AssetRecord:
     # Relacionamentos preenchidos na etapa de reconciliação pós-parsing
     rendimentos_isentos: List[ExemptIncomeRecord] = field(default_factory=list)
     rendimentos_exclusivos: List[ExclusiveIncomeRecord] = field(default_factory=list)
+    rendimentos_tributaveis: List[TaxableIncomeRecord] = field(default_factory=list)

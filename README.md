@@ -7,7 +7,7 @@ Este repositório contém um **parser Python** para os arquivos de declaração 
 O objetivo da primeira versão é:
 
 - Ler registros de **Bens e Direitos** (registro 27), **Rendimentos Isentos** (registro 23) e **Rendimentos Sujeitos a Tributação Exclusiva** (registro 24).
-- Converter esses dados em objetos canônicos (`AssetRecord`, `ExemptIncomeRecord`, `ExclusiveIncomeRecord`).
+- Converter esses dados em objetos canônicos (`AssetRecord`, `ExemptIncomeRecord`, `ExclusiveIncomeRecord`, `TaxableIncomeRecord`).
 - Exportar tudo para um **arquivo Excel** bem formatado, pronto para reconciliação tributária futura.
 
 A arquitetura está preparada para extensões (novo registros, reconciliação, validações avançadas).
@@ -75,12 +75,13 @@ python3 -m project.main --input dados_exemplo/entrada_exemplo.DEC --output dados
 - `--output` – caminho onde o Excel será gravado.
 - `--debug` – ativa logging em nível `DEBUG` (útil para depuração).
 
-Após a execução, abra `saida.xlsx` em qualquer visualizador de planilhas. O workbook contém quatro abas:
+Após a execução, abra `saida.xlsx` em qualquer visualizador de planilhas. O workbook contém cinco abas:
 
 - `Resumo`, como primeira aba, consolidando cada bem em uma única linha.
 - `Bens e Direitos`, com os detalhes completos de cada ativo.
 - `Rendimentos Isentos`, com o nome do bem associado em formato de link interno.
 - `Rendimentos Exclusivos`, também com navegação interna para o bem correspondente.
+- `Rendimentos Tributáveis`, isolada dos exclusivos e com link de retorno para o bem correspondente.
 
 Todas as abas possuem uma primeira coluna `Item`, que enumera as linhas de dados. O exportador cria hyperlinks internos para facilitar a navegação entre resumo, bens e rendimentos, e o texto de cada link inclui o item relacionado.
 
@@ -93,6 +94,8 @@ Todas as abas possuem uma primeira coluna `Item`, que enumera as linhas de dados
 - A exportação Excel foi refatorada para incluir a aba `Resumo` como primeira planilha.
 - A planilha `Bens e Direitos` passou a exportar grupo, código, código do bem, localização, país, indicador de exterior, CNPJ fonte e nome do ativo quando identificável.
 - A planilha `Bens e Direitos` também passou a extrair `Instituicao`, `Quantidade` e `Preco Medio` quando a discriminação segue um padrão estruturado.
+- O registro `88` passou a ser tratado como `Rendimentos Tributáveis`, em estrutura própria e independente dos rendimentos exclusivos.
+- A aba `Resumo` passou a incluir o total de rendimentos tributáveis associados por bem.
 - As abas de rendimentos agora usam hyperlinks internos para voltar ao bem correspondente.
 - As colunas de vínculos em `Bens e Direitos` agora são hyperlinks para as abas de rendimentos, em vez de apenas contagens.
 - Todas as abas receberam a coluna `Item` para padronizar navegação e referência cruzada.
@@ -108,6 +111,7 @@ O arquivo [dados_exemplo/entrada_exemplo.DEC](/home/rafael/projetos/irpf-compare
 - indicador de exterior e código de país para cenários de localização;
 - fontes pagadoras variadas para vincular rendimentos aos bens;
 - rendimentos isentos e exclusivos, tanto diretos quanto detalhados.
+- rendimentos tributáveis separados dos exclusivos, com vínculo por CNPJ e aba própria.
 
 Isso ajuda a validar comparações por tipo de ativo, local, fonte pagadora e evolução patrimonial.
 
@@ -118,6 +122,7 @@ Campos especialmente úteis para comparações futuras:
 - identificação da fonte pagadora por CNPJ;
 - nome do ativo quando reconhecido na discriminação, como ticker de ação ou sigla de criptoativo;
 - instituição, quantidade e preço médio para ativos descritos em formato estruturado;
+- total de rendimentos tributáveis associados por bem;
 - vínculos navegáveis entre bem e rendimentos nas duas direções.
 
 ### Formato estruturado da discriminação

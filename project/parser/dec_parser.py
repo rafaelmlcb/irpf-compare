@@ -11,7 +11,7 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Set, Tuple
 
-from project.models.canonical import AssetRecord, ExemptIncomeRecord, ExclusiveIncomeRecord
+from project.models.canonical import AssetRecord, ExemptIncomeRecord, ExclusiveIncomeRecord, TaxableIncomeRecord
 from project.parser.fixed_width import parse_line
 from project.parser.registry import LayoutRegistry
 from project.utils.helpers import (
@@ -33,7 +33,8 @@ ASSET_TYPE = "27"                              # Bens e Direitos
 EXEMPT_SUMMARY_TYPE = "23"                     # Rendimentos Isentos – sumário
 EXCLUSIVE_SUMMARY_TYPE = "24"                  # Rendimentos Exclusivos – sumário
 EXEMPT_DETAIL_TYPES: Set[str] = {"84", "85", "86", "87"}
-EXCLUSIVE_DETAIL_TYPES: Set[str] = {"88", "89"}
+TAXABLE_DETAIL_TYPES: Set[str] = {"88"}
+EXCLUSIVE_DETAIL_TYPES: Set[str] = {"89"}
 
 
 def _normalize_code(raw: str) -> str:
@@ -44,6 +45,10 @@ def _normalize_code(raw: str) -> str:
     return cleaned
 
 
+def _normalize_cnpj(raw: str) -> str:
+    return raw.replace(".", "").replace("/", "").replace("-", "").strip()
+
+
 class DecParser:
     """
     Parser para arquivos IRPF no formato posicional (.DEC / .DBK).
@@ -52,7 +57,7 @@ class DecParser:
 
         registry = LayoutRegistry()
         parser = DecParser(registry)
-        assets, exempts, exclusives = parser.parse_file("declaracao.DEC")
+        assets, exempts, exclusives, taxables = parser.parse_file("declaracao.DEC")
         stats = parser.report_stats()
     """
 
@@ -69,14 +74,14 @@ class DecParser:
     def parse_file(
         self,
         file_path: Any,
-    ) -> Tuple[List[AssetRecord], List[ExemptIncomeRecord], List[ExclusiveIncomeRecord]]:
+    ) -> Tuple[List[AssetRecord], List[ExemptIncomeRecord], List[ExclusiveIncomeRecord], List[TaxableIncomeRecord]]:
         """
         Lê um arquivo .DEC / .DBK e retorna as três listas canônicas.
 
         Etapas:
           1. Primeira passagem: detecta quais códigos possuem registros de detalhe
              (84-89) para aplicar a regra de anti-duplicidade.
-          2. Segunda passagem: extrai e constrói os registros canônicos,
+        2. Segunda passagem: extrai e constrói os registros canônicos,
              ignorando sumários (23/24) cujo código já possui um detalhe.
           3. Reconciliação: vincula rendimentos a bens pelo CNPJ da fonte pagadora.
         """
@@ -114,6 +119,7 @@ class DecParser:
         assets: List[AssetRecord] = []
         exempts: List[ExemptIncomeRecord] = []
         exclusives: List[ExclusiveIncomeRecord] = []
+        taxables: List[TaxableIncomeRecord] = []
 
         with path.open("r", encoding="utf-8") as fh:
             for line_number, raw_line in enumerate(fh, start=1):
@@ -171,6 +177,13 @@ class DecParser:
                         self._inc_processed(rtype)
 
                 # ── Rendimentos Exclusivos – Detalhe ───────────────────────────
+                elif rtype in TAXABLE_DETAIL_TYPES:
+                    record = self._build_taxable_detail(fields, rtype, line)
+                    if record:
+                        taxables.append(record)
+                        self._inc_processed(rtype)
+
+                # ── Rendimentos Exclusivos – Detalhe ───────────────────────────
                 elif rtype in EXCLUSIVE_DETAIL_TYPES:
                     record = self._build_exclusive_detail(fields, rtype)
                     if record:
@@ -184,9 +197,9 @@ class DecParser:
                 self._parsed_lines += 1
 
         # ── 3ª etapa: Reconciliação CNPJ ──────────────────────────────────────
-        self._reconcile(assets, exempts, exclusives)
+        self._reconcile(assets, exempts, exclusives, taxables)
 
-        return assets, exempts, exclusives
+        return assets, exempts, exclusives, taxables
 
     def report_stats(self) -> Dict[str, Any]:
         """Retorna estatísticas da última execução de parse_file."""
@@ -320,6 +333,31 @@ class DecParser:
             logger.warning("Erro ao construir ExclusiveIncomeRecord (detalhe %s): %s", rtype, exc)
             return None
 
+    def _build_taxable_detail(self, fields: Dict[str, str], rtype: str, raw_line: str):
+        try:
+            cpf = clean_string(fields.get("NR_CPF", ""))
+            code = _normalize_code(fields.get("NR_COD", ""))
+            descricao = get_exclusive_income_description(code)
+            cnpj_fonte = ""
+            if "NR_CGC_PAGADORA" in fields:
+                cnpj_fonte = _normalize_cnpj(fields.get("NR_CGC_PAGADORA", ""))
+            else:
+                cnpj_fonte = _normalize_cnpj(raw_line[10:24])
+            nome_fonte = clean_string(fields.get("NM_NOME", ""))
+            valor = parse_decimal(fields.get("VR_VALOR", "0"), decimals=2)
+            return TaxableIncomeRecord(
+                cpf=cpf,
+                tipo_rendimento=code,
+                descricao=descricao,
+                valor=valor,
+                cnpj_fonte=cnpj_fonte,
+                nome_fonte=nome_fonte,
+                origem="detalhe",
+            )
+        except Exception as exc:
+            logger.warning("Erro ao construir TaxableIncomeRecord (detalhe %s): %s", rtype, exc)
+            return None
+
     # ── Reconciliação ─────────────────────────────────────────────────────────
 
     def _reconcile(
@@ -327,33 +365,47 @@ class DecParser:
         assets: List[AssetRecord],
         exempts: List[ExemptIncomeRecord],
         exclusives: List[ExclusiveIncomeRecord],
+        taxables: List[TaxableIncomeRecord],
     ) -> None:
         """
         Vincula ExemptIncomeRecord e ExclusiveIncomeRecord aos seus AssetRecord
         utilizando o CNPJ da fonte pagadora como chave estrangeira.
         """
         asset_index: Dict[str, AssetRecord] = {
-            a.cnpj_fonte: a for a in assets if a.cnpj_fonte
+            _normalize_cnpj(a.cnpj_fonte): a for a in assets if a.cnpj_fonte
         }
 
         for rec in exempts:
-            if rec.cnpj_fonte and rec.cnpj_fonte in asset_index:
-                asset = asset_index[rec.cnpj_fonte]
+            cnpj_clean = _normalize_cnpj(rec.cnpj_fonte)
+            if cnpj_clean and cnpj_clean in asset_index:
+                asset = asset_index[cnpj_clean]
                 asset.rendimentos_isentos.append(rec)
                 rec.bem_associado = asset.descricao
                 logger.debug(
                     "Isento cód.%s vinculado ao bem %s via CNPJ %s",
-                    rec.tipo_rendimento, asset.codigo_bem, rec.cnpj_fonte,
+                    rec.tipo_rendimento, asset.codigo_bem, cnpj_clean,
                 )
 
         for rec in exclusives:
-            if rec.cnpj_fonte and rec.cnpj_fonte in asset_index:
-                asset = asset_index[rec.cnpj_fonte]
+            cnpj_clean = _normalize_cnpj(rec.cnpj_fonte)
+            if cnpj_clean and cnpj_clean in asset_index:
+                asset = asset_index[cnpj_clean]
                 asset.rendimentos_exclusivos.append(rec)
                 rec.bem_associado = asset.descricao
                 logger.debug(
                     "Exclusivo cód.%s vinculado ao bem %s via CNPJ %s",
-                    rec.tipo_rendimento, asset.codigo_bem, rec.cnpj_fonte,
+                    rec.tipo_rendimento, asset.codigo_bem, cnpj_clean,
+                )
+
+        for rec in taxables:
+            cnpj_clean = _normalize_cnpj(rec.cnpj_fonte)
+            if cnpj_clean and cnpj_clean in asset_index:
+                asset = asset_index[cnpj_clean]
+                asset.rendimentos_tributaveis.append(rec)
+                rec.bem_associado = asset.descricao
+                logger.debug(
+                    "Tributável cód.%s vinculado ao bem %s via CNPJ %s",
+                    rec.tipo_rendimento, asset.codigo_bem, cnpj_clean,
                 )
 
     # ── Utilidades de estatística ──────────────────────────────────────────────

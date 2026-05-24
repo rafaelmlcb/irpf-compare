@@ -146,7 +146,7 @@ class TestDecParser(unittest.TestCase):
         write_84("0000000000", 135)
         line_84 = "".join(buf_84) + "\n"
 
-        # Build 88 record (exclusive income detailed) using exact offsets
+        # Build 88 record (taxable income detailed) using exact offsets
         buf_88 = [" "] * 131
         def write_88(val: str, start: int):
             for idx, char in enumerate(val):
@@ -154,12 +154,10 @@ class TestDecParser(unittest.TestCase):
                 
         write_88("88", 1)
         write_88("12345678901", 3)
-        write_88("T", 14)
-        write_88("12345678901", 15)
         write_88("0010", 26)
-        write_88("98765432000100", 30)
-        write_88("Fonte Pagadora JCP", 44)
-        write_88("0000000300000", 104) # VR_VALOR (3000.00 with decimals=2)
+        write_88("12345678000199", 11)
+        write_88("Fonte Pagadora Tributavel", 30)
+        write_88("0000000300000", 90) # VR_VALOR (3000.00 with decimals=2)
         write_88("00000", 117)
         write_88("0000000000", 122)
         line_88 = "".join(buf_88) + "\n"
@@ -190,7 +188,7 @@ class TestDecParser(unittest.TestCase):
             with os.fdopen(fd, 'w', encoding='utf-8') as tmp:
                 tmp.writelines(lines)
                 
-            assets, exempts, exclusives = self.parser.parse_file(path)
+            assets, exempts, exclusives, taxables = self.parser.parse_file(path)
             
             # Check Assets
             self.assertEqual(len(assets), 1)
@@ -214,6 +212,12 @@ class TestDecParser(unittest.TestCase):
             self.assertIn("10", exclusive_codes)
             # Ensure the summary 10 was ignored
             self.assertEqual(sum(e.valor for e in exclusives), Decimal("850.00") + Decimal("3000.00"))
+
+            # Check Taxable Incomes (Registro 88)
+            self.assertEqual(len(taxables), 1)
+            self.assertEqual(taxables[0].cnpj_fonte, "12345678000199")
+            self.assertEqual(taxables[0].valor, Decimal("3000.00"))
+            self.assertEqual(len(assets[0].rendimentos_tributaveis), 1)
             
         finally:
             os.remove(path)
