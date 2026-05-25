@@ -96,6 +96,7 @@ Todas as abas possuem uma primeira coluna `Item`, que enumera as linhas de dados
 - A planilha `Bens e Direitos` também passou a extrair `Instituicao`, `Quantidade` e `Preco Medio` quando a discriminação segue um padrão estruturado.
 - O registro `88` passou a ser tratado como `Rendimentos Tributáveis`, em estrutura própria e independente dos rendimentos exclusivos.
 - O layout posicional do registro `88` foi corrigido para preencher corretamente CNPJ da fonte pagadora, nome da fonte, valor e bem associado.
+- O vínculo da aba `Rendimentos Tributáveis` com `Bens e Direitos` passou a normalizar CNPJ antes de montar o hyperlink do bem associado.
 - A aba `Resumo` passou a incluir o total de rendimentos tributáveis associados por bem.
 - As abas de rendimentos agora usam hyperlinks internos para voltar ao bem correspondente.
 - As colunas de vínculos em `Bens e Direitos` agora são hyperlinks para as abas de rendimentos, em vez de apenas contagens.

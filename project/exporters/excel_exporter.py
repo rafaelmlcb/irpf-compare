@@ -73,11 +73,15 @@ def _hyperlink_formula(target_sheet: str, cell_ref: str, label: str) -> str:
     return f'=HYPERLINK("#\'{target_sheet}\'!{cell_ref}","{safe_label}")'
 
 
+def _normalize_cnpj(raw: str) -> str:
+    return raw.replace(".", "").replace("/", "").replace("-", "").strip()
+
+
 def _build_asset_index(assets: Sequence[AssetRecord]) -> dict[str, AssetRecord]:
     index: dict[str, AssetRecord] = {}
     for asset in assets:
         if asset.cnpj_fonte:
-            index[asset.cnpj_fonte] = asset
+            index[_normalize_cnpj(asset.cnpj_fonte)] = asset
     return index
 
 
@@ -222,7 +226,7 @@ def _write_income_sheet(
 
     first_rows: dict[int, int] = {}
     for record in records:
-        asset = assets_by_cnpj.get(record.cnpj_fonte, None) if record.cnpj_fonte else None
+        asset = assets_by_cnpj.get(_normalize_cnpj(record.cnpj_fonte), None) if record.cnpj_fonte else None
         row_idx = ws.max_row + 1
         if asset and id(asset) not in first_rows:
             first_rows[id(asset)] = row_idx
